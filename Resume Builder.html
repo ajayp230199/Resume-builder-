@@ -1,0 +1,525 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Resume Builder</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:wght@400;600;700&display=swap">
+<style>
+/* Layout: editor column on the left, live A4 preview sticky on the right. On phones the two panes switch with a bottom tab bar. */
+:root{
+  --bg:#eef1f5; --panel:#ffffff; --fg:#14202e; --muted:#566273; --line:#d3dae3;
+  --accent:#0e7c86; --on-accent:#ffffff; --soft:#e3f1f2;
+  --paper:#ffffff; --ink:#1b2430; --ink-muted:#5a6572; --ink-line:#cfd6de;
+  --f-ui:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-brand:'Bricolage Grotesque','IBM Plex Sans',system-ui,sans-serif;
+  --f-serif:'Source Serif 4',Georgia,'Times New Roman',serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1520; --panel:#162030; --fg:#e5ebf2; --muted:#94a2b4; --line:#2b384a;
+    --accent:#4cc3cf; --on-accent:#06262a; --soft:#1b3238; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e1520; --panel:#162030; --fg:#e5ebf2; --muted:#94a2b4; --line:#2b384a;
+  --accent:#4cc3cf; --on-accent:#06262a; --soft:#1b3238; color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font-family:var(--f-ui); font-size:15px; line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:16px;
+}
+button,input,textarea{font:inherit;color:inherit}
+.app{max-width:1280px;margin:0 auto}
+
+/* top bar */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:4px 0 16px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.mark{display:grid;place-items:center;width:34px;height:34px;border-radius:6px;background:var(--accent);color:var(--on-accent);font:700 14px var(--f-brand);letter-spacing:.02em}
+.brand h1{margin:0;font:700 22px/1.1 var(--f-brand);letter-spacing:-.01em}
+.top-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+/* buttons */
+.btn{appearance:none;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:6px;padding:8px 14px;font-weight:500;font-size:14px;cursor:pointer;line-height:1.2}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.ghost{border-style:dashed;color:var(--accent);background:transparent}
+.link{appearance:none;border:0;background:none;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:13px;padding:2px 0}
+.link:hover{color:var(--fg)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* split */
+.split{display:grid;grid-template-columns:minmax(340px,480px) minmax(0,1fr);gap:24px;align-items:start}
+.editor{min-width:0;display:flex;flex-direction:column;gap:12px}
+.preview{min-width:0;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;display:flex;flex-direction:column;gap:12px}
+
+.note{margin:0;padding:10px 12px;border:1px solid var(--accent);background:var(--soft);border-radius:6px;font-size:13.5px}
+
+/* editor sections */
+details.sec{background:var(--panel);border:1px solid var(--line);border-radius:8px}
+details.sec>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:12px 14px;font:600 15px var(--f-brand);letter-spacing:.01em}
+details.sec>summary::-webkit-details-marker{display:none}
+details.sec>summary::after{content:"";width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .15s}
+details.sec[open]>summary::after{transform:rotate(-135deg)}
+.sec-body{padding:2px 14px 14px;display:flex;flex-direction:column;gap:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.f.wide{grid-column:1/-1}
+.f label{font-size:12.5px;font-weight:500;color:var(--muted)}
+.f input,.f textarea{width:100%;min-width:0;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:6px;padding:8px 10px;font-size:14.5px}
+.f textarea{resize:vertical;line-height:1.45}
+.f input:focus,.f textarea:focus{outline:2px solid var(--accent);outline-offset:0;border-color:var(--accent)}
+.entry{border:1px solid var(--line);border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.entry-h{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.empty{margin:0;color:var(--muted);font-size:13.5px}
+
+/* preview toolbar */
+.bar{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;justify-content:space-between;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{appearance:none;border:0;background:transparent;padding:7px 12px;font-size:13.5px;font-weight:500;cursor:pointer;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.swatches{display:flex;gap:8px;align-items:center}
+.sw{width:24px;height:24px;border-radius:50%;border:2px solid var(--panel);box-shadow:0 0 0 1px var(--line);cursor:pointer;padding:0}
+.sw[aria-pressed="true"]{box-shadow:0 0 0 2px var(--fg)}
+.bar-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pages{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.pages.warn{color:var(--fg);font-weight:600}
+
+/* paper */
+.sheet-wrap{position:relative;overflow:hidden;background:var(--paper);border:1px solid var(--line);box-shadow:0 8px 28px rgba(20,32,46,.12)}
+.sheet{--ra:#0e7c86;width:794px;min-height:1123px;padding:48px 54px;background:var(--paper);color:var(--ink);font-size:13.5px;line-height:1.45;transform-origin:0 0}
+.sheet h2,.sheet h3,.sheet p{margin:0}
+.r-head{padding-bottom:12px}
+.r-head h2{font-size:30px;line-height:1.15;letter-spacing:.01em;font-weight:700}
+.r-title{margin-top:2px;color:var(--ra);font-weight:500}
+.r-contact{margin-top:6px;font-size:12.5px;color:var(--ink-muted)}
+.r-contact i{font-style:normal;padding:0 .4em;opacity:.55}
+.r-sec h3{font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin:16px 0 7px;color:var(--ra);border-bottom:1px solid var(--ink-line);padding-bottom:3px}
+.r-item{margin-bottom:10px}
+.r-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.r-row strong{font-weight:600}
+.r-per{white-space:nowrap;color:var(--ink-muted);font-size:12.5px}
+.r-sub{color:var(--ink-muted);font-size:13px}
+.r-item ul{margin:4px 0 0;padding-left:1.15em}
+.r-item li{margin:2px 0}
+.r-sum{margin:0}
+.r-skl{margin:3px 0}
+.r-skl b{font-weight:600}
+.r-cols{display:block}
+
+.t-classic{font-family:var(--f-serif);font-size:14px}
+.t-classic .r-head{text-align:center;border-bottom:2px solid var(--ra);margin-bottom:2px}
+.t-classic .r-title{font-style:italic}
+
+.t-modern{font-family:var(--f-ui);font-size:13px}
+.t-modern .r-head h2{font-size:34px;font-weight:600;color:var(--ra);letter-spacing:-.01em}
+.t-modern .r-title{color:var(--ink);font-weight:500}
+.t-modern .r-sec h3{border:0;padding:0;margin:20px 0 8px}
+
+.t-sidebar{font-family:var(--f-ui);font-size:13px;padding:0}
+.t-sidebar .r-head{background:var(--ra);color:#fff;padding:40px 54px 26px}
+.t-sidebar .r-title,.t-sidebar .r-contact{color:#fff}
+.t-sidebar .r-contact{opacity:.92}
+.t-sidebar .r-cols{display:grid;grid-template-columns:minmax(0,1fr) 215px;gap:26px;padding:6px 54px 48px}
+.t-sidebar .r-side{border-left:1px solid var(--ink-line);padding-left:22px}
+.t-sidebar .r-side .r-row{flex-direction:column;gap:0}
+
+/* toast */
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:6px;font-size:14px;z-index:40;max-width:calc(100% - 32px)}
+
+/* phone: panes switch via tabs */
+.tabs{display:none}
+@media (max-width:899px){
+  body{padding-bottom:92px}
+  .split{grid-template-columns:minmax(0,1fr)}
+  .preview{position:static;max-height:none;overflow:visible}
+  body[data-tab="edit"] #pane-prev{display:none}
+  body[data-tab="prev"] #pane-edit{display:none}
+  .tabs{display:flex;gap:8px;position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--panel);border-top:1px solid var(--line);
+    padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+  .tabs button{flex:1;appearance:none;border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:11px 8px;font-weight:600;cursor:pointer}
+  .tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+  .toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+}
+
+@media (prefers-reduced-motion: reduce){details.sec>summary::after{transition:none}}
+
+@media print{
+  @page{size:A4;margin:0}
+  body{background:#fff;padding:0}
+  .top,.editor,.bar,.tabs,.toast{display:none!important}
+  .split{display:block}
+  body[data-tab] #pane-prev{display:block!important}
+  .preview{position:static;max-height:none;overflow:visible}
+  .sheet-wrap{height:auto!important;border:0;box-shadow:none;overflow:visible}
+  .sheet{transform:none!important}
+}
+</style>
+<div class="app">
+  <header class="top">
+    <div class="brand"><span class="mark" aria-hidden="true">CV</span><h1>Resume Builder</h1></div>
+    <div class="top-actions">
+      <button type="button" class="btn" id="btnSample">Load sample</button>
+      <button type="button" class="btn" id="btnClear">Clear all</button>
+    </div>
+  </header>
+
+  <main class="split">
+    <section class="editor" id="pane-edit" aria-label="Resume details">
+      <p class="note" id="sampleNote" hidden>This is sample data. Change any field to make it yours, or use Clear all to start blank.</p>
+      <div id="editor" class="editor"></div>
+    </section>
+
+    <section class="preview" id="pane-prev" aria-label="Resume preview">
+      <div class="bar">
+        <div class="seg" id="tplSeg" role="group" aria-label="Template"></div>
+        <div class="swatches" id="swatches" role="group" aria-label="Accent colour"></div>
+        <div class="bar-actions">
+          <span class="pages" id="pages" aria-live="polite"></span>
+          <button type="button" class="btn" id="btnCopy">Copy as text</button>
+          <button type="button" class="btn primary" id="btnPrint" hidden>Save as PDF</button>
+        </div>
+      </div>
+      <div class="sheet-wrap" id="sheetWrap"><article class="sheet t-classic" id="sheet"></article></div>
+    </section>
+  </main>
+
+  <nav class="tabs" aria-label="Switch view">
+    <button type="button" id="tabEdit" aria-selected="true">Edit</button>
+    <button type="button" id="tabPrev" aria-selected="false">Preview</button>
+  </nav>
+  <div class="toast" id="toast" role="status" hidden></div>
+</div>
+<script>
+(function () {
+  var CAN_PRINT = false;
+  var KEY = 'resume-builder-v1';
+  var $ = function (s) { return document.querySelector(s); };
+
+  var SAMPLE = {
+    sample: true,
+    name: 'Rahul Verma',
+    title: 'MCA Graduate | Full-Stack Developer',
+    email: 'rahul.verma@example.com',
+    phone: '+91 98765 43210',
+    location: 'Pune, Maharashtra',
+    links: 'github.com/rahulverma, linkedin.com/in/rahulverma',
+    summary: 'MCA graduate with hands-on experience building responsive web applications in JavaScript, React and Node.js. Built a resume builder as the final-year project. Looking for a junior developer role.',
+    experience: [
+      { role: 'Web Development Intern', company: 'BrightLeaf Technologies, Pune', period: 'Jan 2025 - Jun 2025',
+        points: 'Built 6 responsive pages from Figma designs using HTML, CSS and JavaScript\nWrote REST APIs in Node.js and MySQL for the customer enquiry module\nCut page load time by 35% by compressing images and lazy loading' }
+    ],
+    education: [
+      { degree: 'MCA (Master of Computer Applications)', school: 'Savitribai Phule Pune University', period: '2023 - 2025', score: 'CGPA 8.2 / 10' },
+      { degree: 'BCA', school: 'Shivaji University, Kolhapur', period: '2020 - 2023', score: '68%' }
+    ],
+    projects: [
+      { name: 'Resume Builder (MCA final-year project)', tech: 'HTML, CSS, JavaScript, PHP, MySQL',
+        points: 'Form-based resume creator with live preview and multiple templates\nUsers can save, edit and download their resumes' }
+    ],
+    skills: 'Languages: Java, Python, JavaScript, SQL\nWeb: HTML5, CSS3, React, Node.js, PHP\nTools: Git, VS Code, MySQL, Figma',
+    template: 'classic',
+    accent: '#0e7c86'
+  };
+  var BLANK = { sample: false, name: '', title: '', email: '', phone: '', location: '', links: '', summary: '',
+    experience: [], education: [], projects: [], skills: '', template: 'classic', accent: '#0e7c86' };
+  var ENTRY = {
+    experience: { role: '', company: '', period: '', points: '' },
+    education: { degree: '', school: '', period: '', score: '' },
+    projects: { name: '', tech: '', points: '' }
+  };
+  var FIRST = { experience: 'role', education: 'degree', projects: 'name' };
+  var TEMPLATES = [['classic', 'Classic'], ['modern', 'Modern'], ['sidebar', 'Sidebar']];
+  var SWATCHES = [['Teal', '#0e7c86'], ['Navy', '#1e3a5f'], ['Maroon', '#8b1e3f'], ['Forest', '#2f6f3e'], ['Charcoal', '#333b45']];
+  var PAGE_H = 1123;
+
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function load() {
+    try {
+      var r = localStorage.getItem(KEY);
+      if (r) { return Object.assign(clone(BLANK), JSON.parse(r)); }
+    } catch (e) {}
+    return clone(SAMPLE);
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+  var state = load();
+
+  /* ---------- editor ---------- */
+  function fid(path) { return 'f-' + path.replace(/\./g, '-'); }
+  function val(path) {
+    return path.split('.').reduce(function (o, k) { return o == null ? o : o[k]; }, state);
+  }
+  function setVal(path, v) {
+    var p = path.split('.'), o = state;
+    for (var i = 0; i < p.length - 1; i++) { o = o[p[i]]; }
+    o[p[p.length - 1]] = v;
+  }
+  function inp(label, path, o) {
+    o = o || {};
+    var id = fid(path), v = esc(val(path));
+    var ph = o.ph ? ' placeholder="' + esc(o.ph) + '"' : '';
+    var ctl = o.area
+      ? '<textarea id="' + id + '" data-path="' + path + '" rows="' + (o.rows || 3) + '"' + ph + '>' + v + '</textarea>'
+      : '<input id="' + id + '" data-path="' + path + '" type="text" value="' + v + '"' + ph + (o.auto ? ' autocomplete="' + o.auto + '"' : '') + '>';
+    return '<div class="f' + (o.wide ? ' wide' : '') + '"><label for="' + id + '">' + label + '</label>' + ctl + '</div>';
+  }
+  function listHtml(kind, label, fields) {
+    var items = state[kind];
+    var body = items.length ? items.map(function (it, i) {
+      return '<div class="entry"><div class="entry-h"><span>' + label + ' ' + (i + 1) + '</span>' +
+        '<button type="button" class="link" data-remove="' + kind + '.' + i + '">Remove</button></div>' +
+        '<div class="grid">' + fields(kind + '.' + i) + '</div></div>';
+    }).join('') : '<p class="empty">Nothing added yet.</p>';
+    return body + '<button type="button" class="btn ghost" data-add="' + kind + '">+ Add ' + label.toLowerCase() + '</button>';
+  }
+  function buildEditor() {
+    var ed = $('#editor');
+    var open = {};
+    ed.querySelectorAll('details').forEach(function (d) { open[d.dataset.sec] = d.open; });
+    function sec(id, title, inner) {
+      var o = open[id] === undefined ? true : open[id];
+      return '<details class="sec" data-sec="' + id + '"' + (o ? ' open' : '') + '><summary>' + title + '</summary><div class="sec-body">' + inner + '</div></details>';
+    }
+    var html = '';
+    html += sec('personal', 'Personal details',
+      '<div class="grid">' +
+      inp('Full name', 'name', { auto: 'name', wide: true }) +
+      inp('Job title', 'title', { ph: 'e.g. Junior Web Developer', wide: true }) +
+      inp('Email', 'email', { auto: 'email' }) +
+      inp('Phone', 'phone', { auto: 'tel' }) +
+      inp('City, State', 'location') +
+      inp('Links (comma separated)', 'links', { ph: 'github.com/you, linkedin.com/in/you', wide: true }) +
+      '</div>');
+    html += sec('summary', 'Summary', inp('Two or three lines about you', 'summary', { area: true, rows: 4 }));
+    html += sec('experience', 'Experience', listHtml('experience', 'Job', function (p) {
+      return inp('Role', p + '.role') + inp('Company', p + '.company') + inp('Period', p + '.period', { ph: 'Jan 2025 - Jun 2025' }) +
+        inp('What you did (one point per line)', p + '.points', { area: true, rows: 4, wide: true });
+    }));
+    html += sec('education', 'Education', listHtml('education', 'Degree', function (p) {
+      return inp('Degree', p + '.degree') + inp('College / University', p + '.school') + inp('Period', p + '.period') + inp('Score', p + '.score', { ph: 'CGPA 8.2 / 10' });
+    }));
+    html += sec('projects', 'Projects', listHtml('projects', 'Project', function (p) {
+      return inp('Project name', p + '.name') + inp('Technologies', p + '.tech') +
+        inp('Details (one point per line)', p + '.points', { area: true, rows: 3, wide: true });
+    }));
+    html += sec('skills', 'Skills', inp('One group per line, like Languages: Java, Python', 'skills', { area: true, rows: 4 }));
+    ed.innerHTML = html;
+  }
+
+  /* ---------- preview ---------- */
+  function lines(t) { return String(t || '').split('\n').map(function (x) { return x.trim(); }).filter(Boolean); }
+  function bullets(t) {
+    var l = lines(t);
+    return l.length ? '<ul>' + l.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : '';
+  }
+  function section(title, body) { return body ? '<section class="r-sec"><h3>' + title + '</h3>' + body + '</section>' : ''; }
+  function linkList() { return String(state.links || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean); }
+
+  function renderSheet() {
+    var s = state, sheet = $('#sheet');
+    var contact = [s.email, s.phone, s.location].concat(linkList()).filter(Boolean).map(esc).join('<i>·</i>');
+    var head = '<header class="r-head"><h2>' + (esc(s.name) || 'Your Name') + '</h2>' +
+      (s.title ? '<p class="r-title">' + esc(s.title) + '</p>' : '') +
+      (contact ? '<p class="r-contact">' + contact + '</p>' : '') + '</header>';
+
+    var summary = s.summary.trim() ? section('Summary', '<p class="r-sum">' + esc(s.summary) + '</p>') : '';
+    var exp = section('Experience', s.experience.filter(function (e) { return e.role || e.company; }).map(function (e) {
+      return '<div class="r-item"><div class="r-row"><strong>' + esc(e.role) + '</strong><span class="r-per">' + esc(e.period) + '</span></div>' +
+        (e.company ? '<div class="r-sub">' + esc(e.company) + '</div>' : '') + bullets(e.points) + '</div>';
+    }).join(''));
+    var proj = section('Projects', s.projects.filter(function (p) { return p.name; }).map(function (p) {
+      return '<div class="r-item"><div class="r-row"><strong>' + esc(p.name) + '</strong></div>' +
+        (p.tech ? '<div class="r-sub">' + esc(p.tech) + '</div>' : '') + bullets(p.points) + '</div>';
+    }).join(''));
+    var edu = section('Education', s.education.filter(function (e) { return e.degree || e.school; }).map(function (e) {
+      return '<div class="r-item"><div class="r-row"><strong>' + esc(e.degree) + '</strong><span class="r-per">' + esc(e.period) + '</span></div>' +
+        (e.school ? '<div class="r-sub">' + esc(e.school) + '</div>' : '') +
+        (e.score ? '<div class="r-sub">' + esc(e.score) + '</div>' : '') + '</div>';
+    }).join(''));
+    var skl = section('Skills', lines(s.skills).map(function (l) {
+      var i = l.indexOf(':');
+      return i > 0 ? '<p class="r-skl"><b>' + esc(l.slice(0, i)) + ':</b> ' + esc(l.slice(i + 1).trim()) + '</p>' : '<p class="r-skl">' + esc(l) + '</p>';
+    }).join(''));
+
+    sheet.className = 'sheet t-' + s.template;
+    sheet.style.setProperty('--ra', s.accent);
+    sheet.innerHTML = head + '<div class="r-cols"><div class="r-main">' + summary + exp + proj + '</div><div class="r-side">' + edu + skl + '</div></div>';
+    fit();
+  }
+
+  function fit() {
+    var wrap = $('#sheetWrap'), sheet = $('#sheet');
+    var w = wrap.clientWidth;
+    if (!w) { return; }
+    var sc = Math.min(1, w / 794);
+    sheet.style.transform = 'scale(' + sc + ')';
+    wrap.style.height = (sheet.offsetHeight * sc) + 'px';
+    var pages = Math.max(1, Math.ceil((sheet.offsetHeight - 2) / PAGE_H));
+    var el = $('#pages');
+    el.textContent = pages + (pages === 1 ? ' page' : ' pages');
+    el.className = 'pages' + (pages > 1 ? ' warn' : '');
+  }
+
+  function buildToolbar() {
+    $('#tplSeg').innerHTML = TEMPLATES.map(function (t) {
+      return '<button type="button" data-tpl="' + t[0] + '" aria-pressed="' + (state.template === t[0]) + '">' + t[1] + '</button>';
+    }).join('');
+    $('#swatches').innerHTML = SWATCHES.map(function (c) {
+      return '<button type="button" class="sw" data-color="' + c[1] + '" aria-label="' + c[0] + '" title="' + c[0] + '" style="background:' + c[1] + '" aria-pressed="' + (state.accent === c[1]) + '"></button>';
+    }).join('');
+  }
+
+  /* ---------- plain text ---------- */
+  function plain() {
+    var s = state, L = [];
+    L.push((s.name || 'Your Name').toUpperCase());
+    if (s.title) { L.push(s.title); }
+    var c = [s.email, s.phone, s.location].concat(linkList()).filter(Boolean).join(' | ');
+    if (c) { L.push(c); }
+    if (s.summary.trim()) { L.push('', 'SUMMARY', s.summary.trim()); }
+    var ex = s.experience.filter(function (e) { return e.role || e.company; });
+    if (ex.length) {
+      L.push('', 'EXPERIENCE');
+      ex.forEach(function (e) {
+        L.push([e.role, e.company].filter(Boolean).join(', ') + (e.period ? ' (' + e.period + ')' : ''));
+        lines(e.points).forEach(function (p) { L.push('- ' + p); });
+      });
+    }
+    var pr = s.projects.filter(function (p) { return p.name; });
+    if (pr.length) {
+      L.push('', 'PROJECTS');
+      pr.forEach(function (p) {
+        L.push(p.name + (p.tech ? ' (' + p.tech + ')' : ''));
+        lines(p.points).forEach(function (x) { L.push('- ' + x); });
+      });
+    }
+    var ed = s.education.filter(function (e) { return e.degree || e.school; });
+    if (ed.length) {
+      L.push('', 'EDUCATION');
+      ed.forEach(function (e) {
+        L.push([e.degree, e.school].filter(Boolean).join(', ') + (e.period ? ' (' + e.period + ')' : '') + (e.score ? ' - ' + e.score : ''));
+      });
+    }
+    if (lines(s.skills).length) { L.push('', 'SKILLS'); lines(s.skills).forEach(function (l) { L.push(l); }); }
+    return L.join('\n');
+  }
+
+  var toastTimer;
+  function toast(msg) {
+    var t = $('#toast');
+    t.textContent = msg; t.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.hidden = true; }, 2200);
+  }
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    return ok;
+  }
+
+  /* ---------- wiring ---------- */
+  function changed() { renderSheet(); save(); }
+  function refreshAll() {
+    buildEditor(); buildToolbar();
+    $('#sampleNote').hidden = !state.sample;
+    renderSheet();
+  }
+
+  $('#editor').addEventListener('input', function (e) {
+    var p = e.target.dataset && e.target.dataset.path;
+    if (!p) { return; }
+    setVal(p, e.target.value);
+    if (state.sample) { state.sample = false; $('#sampleNote').hidden = true; }
+    changed();
+  });
+  $('#editor').addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (!b) { return; }
+    if (b.dataset.add) {
+      var kind = b.dataset.add;
+      state[kind].push(clone(ENTRY[kind]));
+      state.sample = false;
+      refreshAll(); save();
+      var el = document.getElementById(fid(kind + '.' + (state[kind].length - 1) + '.' + FIRST[kind]));
+      if (el) { el.focus(); }
+    } else if (b.dataset.remove) {
+      var parts = b.dataset.remove.split('.');
+      state[parts[0]].splice(+parts[1], 1);
+      state.sample = false;
+      refreshAll(); save();
+    }
+  });
+  $('#tplSeg').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-tpl]');
+    if (!b) { return; }
+    state.template = b.dataset.tpl; buildToolbar(); changed();
+  });
+  $('#swatches').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-color]');
+    if (!b) { return; }
+    state.accent = b.dataset.color; buildToolbar(); changed();
+  });
+  $('#btnCopy').addEventListener('click', function () {
+    var text = plain();
+    var done = function (ok) { toast(ok ? 'Resume text copied' : 'Could not copy. Select the text in the preview instead.'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(fallbackCopy(text)); });
+    } else { done(fallbackCopy(text)); }
+  });
+  $('#btnPrint').hidden = !CAN_PRINT;
+  $('#btnPrint').addEventListener('click', function () { window.print(); });
+
+  $('#btnSample').addEventListener('click', function () {
+    var keep = { template: state.template, accent: state.accent };
+    state = Object.assign(clone(SAMPLE), keep);
+    refreshAll(); save(); toast('Sample loaded');
+  });
+  var armed = null;
+  var clearBtn = $('#btnClear');
+  clearBtn.addEventListener('click', function () {
+    if (!armed) {
+      clearBtn.textContent = 'Tap again to clear';
+      armed = setTimeout(function () { armed = null; clearBtn.textContent = 'Clear all'; }, 3000);
+      return;
+    }
+    clearTimeout(armed); armed = null; clearBtn.textContent = 'Clear all';
+    state = Object.assign(clone(BLANK), { template: state.template, accent: state.accent });
+    refreshAll(); save(); toast('Cleared');
+  });
+
+  function setTab(t) {
+    document.body.dataset.tab = t;
+    $('#tabEdit').setAttribute('aria-selected', t === 'edit');
+    $('#tabPrev').setAttribute('aria-selected', t === 'prev');
+    window.scrollTo(0, 0);
+    fit();
+  }
+  $('#tabEdit').addEventListener('click', function () { setTab('edit'); });
+  $('#tabPrev').addEventListener('click', function () { setTab('prev'); });
+  document.body.dataset.tab = 'edit';
+
+  if (window.ResizeObserver) { new ResizeObserver(fit).observe($('#sheetWrap')); }
+  window.addEventListener('resize', fit);
+  if (document.fonts && document.fonts.ready) { document.fonts.ready.then(fit); }
+
+  refreshAll();
+})();
+</script>
+
+</body></html>
