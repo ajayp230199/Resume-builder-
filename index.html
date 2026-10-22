@@ -1,4 +1,8 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Resume Builder</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -150,8 +154,11 @@ details.sec[open]>summary::after{transform:rotate(-135deg)}
 @media (prefers-reduced-motion: reduce){details.sec>summary::after{transition:none}}
 
 @media print{
-  @page{size:A4;margin:0}
+  @page{size:A4;margin:12mm 0}
   body{background:#fff;padding:0}
+  .sheet{width:100%!important;min-height:0!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .r-item{break-inside:avoid}
+  .r-sec h3{break-after:avoid}
   .top,.editor,.bar,.tabs,.toast{display:none!important}
   .split{display:block}
   body[data-tab] #pane-prev{display:block!important}
@@ -160,6 +167,8 @@ details.sec[open]>summary::after{transform:rotate(-135deg)}
   .sheet{transform:none!important}
 }
 </style>
+</head>
+<body>
 <div class="app">
   <header class="top">
     <div class="brand"><span class="mark" aria-hidden="true">CV</span><h1>Resume Builder</h1></div>
@@ -182,6 +191,8 @@ details.sec[open]>summary::after{transform:rotate(-135deg)}
         <div class="bar-actions">
           <span class="pages" id="pages" aria-live="polite"></span>
           <button type="button" class="btn" id="btnCopy">Copy as text</button>
+          <button type="button" class="btn" id="btnWord" hidden>Download Word</button>
+          <button type="button" class="btn" id="btnShare" hidden>Share</button>
           <button type="button" class="btn primary" id="btnPrint" hidden>Save as PDF</button>
         </div>
       </div>
@@ -197,7 +208,7 @@ details.sec[open]>summary::after{transform:rotate(-135deg)}
 </div>
 <script>
 (function () {
-  var CAN_PRINT = false;
+  var CAN_PRINT = true;
   var KEY = 'resume-builder-v1';
   var $ = function (s) { return document.querySelector(s); };
 
@@ -482,8 +493,82 @@ details.sec[open]>summary::after{transform:rotate(-135deg)}
       navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(fallbackCopy(text)); });
     } else { done(fallbackCopy(text)); }
   });
+  /* ---------- export: PDF, Word, share (standalone site only) ---------- */
+  function fileBase() {
+    var n = String(state.name || 'Resume').trim().replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    return (n || 'Resume') + '_Resume';
+  }
+  function wordHtml() {
+    var s = state, ac = s.accent;
+    var contact = [s.email, s.phone, s.location].concat(linkList()).filter(Boolean).map(esc).join(' &nbsp;|&nbsp; ');
+    function h(t) {
+      return '<h2 style="font-size:11pt;color:' + ac + ';border-bottom:1px solid #999999;margin:14pt 0 4pt 0;padding-bottom:2pt;letter-spacing:1pt;text-transform:uppercase">' + t + '</h2>';
+    }
+    function row(l, r) {
+      return '<table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse"><tr><td style="font-weight:bold">' + l +
+        '</td><td align="right" style="color:#555555;white-space:nowrap">' + r + '</td></tr></table>';
+    }
+    function ul(t) {
+      var l = lines(t);
+      return l.length ? '<ul style="margin:2pt 0 6pt 0">' + l.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : '';
+    }
+    function sub(t) { return t ? '<p style="color:#555555;margin:0 0 2pt 0">' + esc(t) + '</p>' : ''; }
+    var b = '<h1 style="font-size:22pt;margin:0;color:' + ac + '">' + (esc(s.name) || 'Your Name') + '</h1>';
+    if (s.title) { b += '<p style="font-size:12pt;margin:2pt 0 2pt 0">' + esc(s.title) + '</p>'; }
+    if (contact) { b += '<p style="color:#555555;margin:0">' + contact + '</p>'; }
+    if (s.summary.trim()) { b += h('Summary') + '<p>' + esc(s.summary) + '</p>'; }
+    var ex = s.experience.filter(function (e) { return e.role || e.company; });
+    if (ex.length) {
+      b += h('Experience') + ex.map(function (e) { return row(esc(e.role), esc(e.period)) + sub(e.company) + ul(e.points); }).join('');
+    }
+    var pr = s.projects.filter(function (p) { return p.name; });
+    if (pr.length) {
+      b += h('Projects') + pr.map(function (p) { return row(esc(p.name), '') + sub(p.tech) + ul(p.points); }).join('');
+    }
+    var ed = s.education.filter(function (e) { return e.degree || e.school; });
+    if (ed.length) {
+      b += h('Education') + ed.map(function (e) { return row(esc(e.degree), esc(e.period)) + sub(e.school) + sub(e.score); }).join('');
+    }
+    if (lines(s.skills).length) {
+      b += h('Skills') + lines(s.skills).map(function (l) {
+        var i = l.indexOf(':');
+        return i > 0 ? '<p><b>' + esc(l.slice(0, i)) + ':</b> ' + esc(l.slice(i + 1).trim()) + '</p>' : '<p>' + esc(l) + '</p>';
+      }).join('');
+    }
+    return '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">' +
+      '<head><meta charset="utf-8"><title>' + esc(fileBase()) + '</title>' +
+      '<style>@page{size:21cm 29.7cm;margin:1.8cm}body{font-family:Calibri,Arial,sans-serif;font-size:10.5pt;color:#1b2430}p{margin:0 0 3pt 0}</style>' +
+      '</head><body>' + b + '</body></html>';
+  }
+  function wordBlob() { return new Blob(['﻿', wordHtml()], { type: 'application/msword' }); }
+
+  var canShare = !!navigator.share;
   $('#btnPrint').hidden = !CAN_PRINT;
-  $('#btnPrint').addEventListener('click', function () { window.print(); });
+  $('#btnWord').hidden = !CAN_PRINT;
+  $('#btnShare').hidden = !(CAN_PRINT && canShare);
+
+  $('#btnPrint').addEventListener('click', function () {
+    toast('In the next window choose Save as PDF');
+    setTimeout(function () { window.print(); }, 400);
+  });
+  $('#btnWord').addEventListener('click', function () {
+    var url = URL.createObjectURL(wordBlob());
+    var a = document.createElement('a');
+    a.href = url; a.download = fileBase() + '.doc';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+    toast('Word file downloaded');
+  });
+  $('#btnShare').addEventListener('click', function () {
+    var file = null;
+    try { file = new File([wordBlob()], fileBase() + '.doc', { type: 'application/msword' }); } catch (e) {}
+    var data = (file && navigator.canShare && navigator.canShare({ files: [file] }))
+      ? { files: [file], title: fileBase() }
+      : { title: fileBase(), text: plain() };
+    navigator.share(data).catch(function (e) {
+      if (!e || e.name !== 'AbortError') { toast('Sharing is not available here. Use Copy as text.'); }
+    });
+  });
 
   $('#btnSample').addEventListener('click', function () {
     var keep = { template: state.template, accent: state.accent };
@@ -521,5 +606,5 @@ details.sec[open]>summary::after{transform:rotate(-135deg)}
   refreshAll();
 })();
 </script>
-
-</body></html>
+</body>
+</html>
